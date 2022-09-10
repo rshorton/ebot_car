@@ -44,10 +44,13 @@ class DonkeyCar(Node):
             1)
 
         # DonkeyCar Tub for saving training data
-        inputs=['cam/image_array','user/angle', 'user/throttle']
+        inputs=['cam/image_array','user/throttle', 'user/angle']
         types=['image_array','float', 'float']
         tub_path = TubHandler(path="/home/elsabot/donkey_car_data").create_tub_path()
         self.tub_writer = TubWriter(tub_path, inputs=inputs, types=types)
+
+        # Select the OAK-1 camera
+        device_info = dai.Device.getDeviceByMxId("14442C10D1774DD000")
 
         with dai.Device(self.create_pipeline()) as device:
             qRgb = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
@@ -74,13 +77,13 @@ class DonkeyCar(Node):
                 twist = None    
 
                 if inDet is not None:
-                    linear = inDet.getLayerFp16('StatefulPartitionedCall/model/n_outputs0/BiasAdd/Add')[0]
-                    twist = inDet.getLayerFp16('StatefulPartitionedCall/model/n_outputs1/BiasAdd/Add')[0]    
+                    linear = inDet.getLayerFp16('StatefulPartitionedCall/model/n_outputs1/BiasAdd/Add')[0]
+                    twist = inDet.getLayerFp16('StatefulPartitionedCall/model/n_outputs0/BiasAdd/Add')[0]    
                     self.get_logger().info("Model twist: %f,  linear: %f" % (twist, linear))
 
                 if inRgb is not None:
                     frame = inRgb.getCvFrame()
-
+                    
                     # Left-top button on controller used to switch between NN control vs. manual control
                     if self.joy_msg == None or self.joy_msg.buttons[4] == 0:
                         if self.cmd_vel_msg != None:
@@ -95,15 +98,16 @@ class DonkeyCar(Node):
                             self.pub_cmd_vel.publish(self.cmd_vel_msg)
                             self.get_logger().info("                                            Joy twist: %f,  linear: %f" % (self.cmd_vel_msg.angular.z, self.cmd_vel_msg.linear.x))
 
-                            # Save data to tub for training
-                            self.tub_writer.run(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), self.cmd_vel_msg.linear.x, self.cmd_vel_msg.angular.z)
-                            self.cmd_vel_msg = None
+                            if self.joy_msg != None and self.joy_msg.buttons[0] == 1:
+                                # Save data to tub for training while pressing button LT
+                                self.tub_writer.run(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), self.cmd_vel_msg.linear.x, self.cmd_vel_msg.angular.z)
+                                self.get_logger().info("logging")
+                                self.cmd_vel_msg = None
 
                     elif linear != None and twist != None:
                         msg = Twist()
-                        # Fix - why do these need a scale adjustment?
-                        msg.linear.x = linear*3
-                        msg.angular.z = twist*6
+                        msg.linear.x = linear
+                        msg.angular.z = twist
                         self.pub_cmd_vel.publish(msg)
 
                 if frame is not None:
@@ -146,7 +150,7 @@ class DonkeyCar(Node):
             nnOut.setStreamName("nn")
 
             # Define a neural network that will make predictions based on the source frames
-            nn.setBlobPath(get_model_path('donkey_car_2021_4_norm_inp_rev_4shave.blob'))            
+            nn.setBlobPath(get_model_path('donkey_car_0909.blob'))
             nn.setNumInferenceThreads(2)
             nn.input.setBlocking(False)
 
