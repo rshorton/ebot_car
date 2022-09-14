@@ -2,6 +2,8 @@
 
 ROS node implementing a Donkey Car control node
 
+Example video:  https://youtu.be/5PBUIvnHb9w
+
 The data collection facility (Tub Part) of Donkey car is used for storing the training data.  The collected data is uploaded during training step 1 below.
 
 Training, see the Google Colab notebooks in the 'training' directory.
