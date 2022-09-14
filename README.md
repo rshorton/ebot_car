@@ -21,7 +21,7 @@ pushd ~/depthai-python/; . venv/bin/activate; popd
     (Revise the above command to use your install of DepthAi.)
 
 In first terminal:
-[Run robot base driver node]
+[Run robot base driver node for your robot]
 
 In second terminal:
 ros2 launch ebot_car ebot_car.launch.py
@@ -31,4 +31,4 @@ ros2 launch ebot_car joy_teleop.launch.py
 
 ````
 
-Pressing the upper left button on the game controller (you will probably need to remap the button for your controller) engages the auto pilot mode.  When released, normal teleop mode is enabled.
+Pressing the upper left button on the game controller (you will probably need to remap the button for your controller) engages the auto pilot mode.  When released, normal teleop mode is enabled.  Training data is recorded to a Donkey Car data Tub whenenver the A button is pressed.
